@@ -36,6 +36,7 @@ class StofDoctrineExtensionsExtension extends Extension
         $useTranslatable = false;
         $useLoggable = false;
         $useBlameable = false;
+        $useSluggable = false;
 
         foreach ($config['orm'] as $name => $listeners) {
             foreach ($listeners as $ext => $enabled) {
@@ -50,6 +51,8 @@ class StofDoctrineExtensionsExtension extends Extension
                         $useLoggable = true;
                     } elseif ('blameable' === $ext) {
                         $useBlameable = true;
+                    } elseif ('sluggable' === $ext) {
+                        $useSluggable = true;
                     }
                     $definition = $container->getDefinition($listener);
                     $definition->addTag('doctrine.event_subscriber', $attributes);
@@ -94,6 +97,17 @@ class StofDoctrineExtensionsExtension extends Extension
             $container->getDefinition('stof_doctrine_extensions.event_listener.blame')
                 ->setPublic(true)
                 ->addTag('kernel.event_subscriber');
+        }
+        if($useSluggable) {
+            $sluggableConfig = $config['sluggable'];
+            if ($sluggableConfig) {
+                $definition = $container->getDefinition('stof_doctrine_extensions.listener.sluggable');
+                foreach($sluggableConfig['managed_filters'] as $filter => $disable) {
+                    if ($disable === true) {
+                        $definition->addMethodCall('addManagedFilter', array($filter, true));
+                    }
+                }
+            }
         }
 
         if ($uploadableConfig['default_file_path']) {
